@@ -23,12 +23,14 @@ with st.expander("🔍 Bagaimana Cara Kerja Prediksi Ini?"):
     > ⚠️ **Catatan**: Prediksi ini hanya berdasarkan pola statistik dan **bukan diagnosis pasti**. Banyak faktor kehidupan nyata yang tidak bisa ditangkap oleh data.
     """)
 
-model = joblib.load("artifacts/best_model.pkl")
-scaler = joblib.load("artifacts/scaler.pkl")
-encoders = joblib.load("artifacts/encoders.pkl")
-features = joblib.load("artifacts/features.pkl")
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-df_ref = pd.read_csv("marriage_longevity_master.csv")
+model = joblib.load(os.path.join(BASE_DIR, "artifacts", "best_model.pkl"))
+scaler = joblib.load(os.path.join(BASE_DIR, "artifacts", "scaler.pkl"))
+encoders = joblib.load(os.path.join(BASE_DIR, "artifacts", "encoders.pkl"))
+features = joblib.load(os.path.join(BASE_DIR, "artifacts", "features.pkl"))
+
+df_ref = pd.read_csv(os.path.join(BASE_DIR, "marriage_longevity_master.csv"))
 
 # Mapping nama kolom ke label Bahasa Indonesia
 LABEL_ID = {

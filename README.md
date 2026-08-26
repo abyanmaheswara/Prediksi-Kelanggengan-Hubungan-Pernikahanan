@@ -29,18 +29,26 @@ Aplikasi berbasis Machine Learning untuk memprediksi potensi kelanggengan atau r
 
 ## 🛠️ Cara Menjalankan Aplikasi
 
-### 1. Install Dependencies
+### 1. Masuk ke Folder Proyek & Install Dependencies
+Buka terminal / command prompt di folder proyek:
 ```bash
-pip install streamlit pandas joblib scikit-learn plotly pyngrok
+pip install -r requirements.txt
 ```
 
-### 2. Jalankan secara Lokal
+### 2. Jalankan secara Lokal (Streamlit)
+> ⚠️ **PENTING**: Jangan menekan tombol "Play" (Run Python File) biasa di VS Code karena aplikasi ini adalah Streamlit Web App. Jalankan perintah berikut di terminal:
+
 ```bash
 streamlit run app.py
 ```
 Akses di browser pada `http://localhost:8501`.
 
-### 3. Jalankan dengan Ngrok (Akses Online)
+### 3. Jalankan dengan Ngrok (Akses Online Publik)
+Sebelum menjalankan, pastikan sudah setting token ngrok sekali saja:
+```bash
+python -c "from pyngrok import ngrok; ngrok.set_auth_token('TOKEN_NGROK_KAMU')"
+```
+Lalu jalankan:
 ```bash
 python run_ngrok.py
 ```

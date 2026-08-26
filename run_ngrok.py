@@ -7,9 +7,14 @@ print("="*60)
 print("🚀 MENJALANKAN STREAMLIT DENGAN NGROK TUNNEL")
 print("="*60)
 
+import os
+
 # 1. Jalankan Streamlit
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+app_path = os.path.join(BASE_DIR, "app.py")
+
 print("\n>> Memulai server Streamlit pada port 8501...")
-cmd = [sys.executable, "-m", "streamlit", "run", "app.py", "--server.port", "8501", "--server.headless", "true"]
+cmd = [sys.executable, "-m", "streamlit", "run", app_path, "--server.port", "8501", "--server.headless", "true"]
 process = subprocess.Popen(cmd)
 
 # Tunggu server siap
