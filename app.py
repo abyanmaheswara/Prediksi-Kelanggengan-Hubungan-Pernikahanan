@@ -72,7 +72,31 @@ OPSI_ID = {
         "monthly": "Bulanan",
         "weekly": "Mingguan",
     },
+}
 
+# Penjelasan arti nilai/skala pada setiap fitur
+HELP_TEXT = {
+    "marriage_number": "Pernikahan ke berapa yang sedang dijalani (1, 2, dst).",
+    "age_at_marriage": "Usia saat melangsungkan pernikahan (tahun).",
+    "age_gap_years": "Selisih usia antara kamu dan pasangan (tahun).",
+    "education_level": "Tingkat pendidikan formal tertinggi yang diselesaikan.",
+    "household_income_usd": "Total estimasi pendapatan rumah tangga gabungan per tahun (USD).",
+    "financial_stress": "Tingkat beban/kecemasan ekonomi (0 = Sangat tenang/aman, 5 = Beban wajar, 10 = Krisis/stres berat).",
+    "both_employed": "Apakah suami dan istri sama-sama memiliki pekerjaan/penghasilan?",
+    "cohabited_before": "Apakah pernah tinggal serumah bersama sebelum resmi menikah?",
+    "premarital_counseling": "Apakah pernah mengikuti bimbingan/konseling pranikah?",
+    "child_before_marriage": "Apakah sudah memiliki anak sebelum melangsungkan pernikahan?",
+    "n_children": "Jumlah total anak yang dimiliki saat ini.",
+    "religious_attendance": "Seberapa rutin menghadiri kegiatan ibadah/keagamaan.",
+    "criticism": "Kebiasaan menyerang pribadi/karakter pasangan (0 = Sangat konstruktif/tidak menyerang, 10 = Selalu menyalahkan kepribadian).",
+    "contempt": "Tingkat merendahkan/mengejek/sinis (0 = Sangat menghormati, 5 = Kadang sinis, 10 = Sering menghina/memaki).",
+    "defensiveness": "Reaksi defensif/membela diri (0 = Terbuka & berani mengakui salah, 10 = Selalu menolak salah & playing victim).",
+    "stonewalling": "Mendiamkan/mogok bicara/kabur saat konflik (0 = Selalu siap diskusi, 10 = Silent treatment parah berhari-hari).",
+    "repair_attempt_success": "Keberhasilan meredakan emosi & berdamai saat bertengkar (0 = Selalu gagal/makin runyam, 10 = Sangat cepat berdamai).",
+    "positive_negative_ratio": "Rasio interaksi menyenangkan vs buruk (Skor <1.0 = Buruk/banyak negatif, 5.0+ = Sangat ideal/banyak momen positif).",
+    "conflict_frequency_weekly": "Berapa kali terjadi pertengkaran/perdebatan panas dalam satu minggu.",
+    "shared_activities_weekly": "Berapa kali meluangkan waktu bersama (kencan, makan bareng, ngobrol intim) dalam seminggu.",
+    "years_married": "Berapa lama usia pernikahan saat ini (tahun).",
 }
 
 def get_label(feat):
@@ -101,6 +125,7 @@ with st.form("form_prediksi"):
         col = cols[i % 2]
         with col:
             label = get_label(feat)
+            help_desc = HELP_TEXT.get(feat, "")
             if feat in encoders:
                 options = list(encoders[feat].classes_)
                 # Terjemahkan opsi jika tersedia
@@ -133,6 +158,10 @@ with st.form("form_prediksi"):
                 max_val = float(df_ref[feat].max())
                 mean_val = float(df_ref[feat].mean())
                 user_input[feat] = st.slider(label, min_val, max_val, mean_val, step=0.5)
+            
+            # Tempelkan penjelasan langsung tepat di bawah slider / input
+            if help_desc:
+                st.caption(f"ℹ️ *{help_desc}*")
 
     submit = st.form_submit_button("🔮 Prediksi Sekarang")
 
@@ -159,36 +188,70 @@ if submit:
         })
         st.dataframe(ringkasan, use_container_width=True, hide_index=True)
 
-    if hasattr(model, "feature_importances_"):
-        import plotly.express as px
+    import plotly.express as px
+    import plotly.graph_objects as go
 
+    # 1. VISUALISASI DINAMIS SESUAI INPUT PENGGUNA
+    st.subheader("📊 Profil Evaluasi Hubungan Kamu")
+    st.caption("Grafik ini menggambarkan kondisi hubungan berdasarkan nilai yang baru saja kamu masukkan:")
+
+    kategori_komunikasi = ["Tingkat Kritik", "Tingkat Penghinaan", "Tingkat Defensif", "Tingkat Menghindar", "Keberhasilan Berdamai", "Stres Keuangan"]
+    nilai_komunikasi = [
+        user_input.get("criticism", 5.0),
+        user_input.get("contempt", 5.0),
+        user_input.get("defensiveness", 5.0),
+        user_input.get("stonewalling", 5.0),
+        user_input.get("repair_attempt_success", 5.0),
+        user_input.get("financial_stress", 5.0)
+    ]
+
+    fig_user = go.Figure()
+    fig_user.add_trace(go.Bar(
+        x=kategori_komunikasi,
+        y=nilai_komunikasi,
+        marker_color=['#ef4444' if x > 6 else '#f59e0b' if x > 3 else '#10b981' for x in nilai_komunikasi],
+        text=[f"{v:.1f}/10" for v in nilai_komunikasi],
+        textposition="outside"
+    ))
+    fig_user.update_layout(
+        yaxis=dict(range=[0, 11], title="Skor (0 - 10)"),
+        xaxis=dict(title=""),
+        height=350,
+        margin=dict(l=10, r=10, t=20, b=10),
+        font=dict(size=12),
+        plot_bgcolor="rgba(0,0,0,0)",
+        paper_bgcolor="rgba(0,0,0,0)",
+    )
+    st.plotly_chart(fig_user, use_container_width=True)
+
+    # 2. VISUALISASI BOBOT MODEL MACHINE LEARNING (STATIS DENGAN WARNA BIRU PROFESIONAL)
+    if hasattr(model, "feature_importances_"):
         imp = pd.DataFrame({
             "Fitur": [get_label(f) for f in features],
             "Pengaruh": model.feature_importances_
         }).sort_values("Pengaruh", ascending=True).tail(10)
 
-        st.subheader("📈 Faktor Paling Berpengaruh")
-        st.caption("💡 Grafik ini menunjukkan **seberapa penting** setiap faktor dalam keputusan model, "
-                   "bukan nilai yang kamu isi. Semakin panjang bar-nya, semakin besar pengaruh faktor tersebut terhadap prediksi.")
+        st.subheader("🧠 Bobot Pengetahuan Model (Feature Importance)")
+        st.caption("Grafik ini menunjukkan seberapa besar kontribusi setiap variabel dalam algoritma Machine Learning:")
 
-        fig = px.bar(
+        fig_imp = px.bar(
             imp,
             x="Pengaruh",
             y="Fitur",
             orientation="h",
             color="Pengaruh",
-            color_continuous_scale="RdYlGn_r",
+            color_continuous_scale="Blues",
             text=imp["Pengaruh"].apply(lambda x: f"{x:.3f}"),
         )
-        fig.update_layout(
-            height=400,
+        fig_imp.update_layout(
+            height=380,
             margin=dict(l=10, r=10, t=10, b=10),
             yaxis_title="",
-            xaxis_title="Tingkat Pengaruh",
+            xaxis_title="Tingkat Kontribusi Bobot",
             coloraxis_showscale=False,
-            font=dict(size=13),
+            font=dict(size=12),
             plot_bgcolor="rgba(0,0,0,0)",
             paper_bgcolor="rgba(0,0,0,0)",
         )
-        fig.update_traces(textposition="outside")
-        st.plotly_chart(fig, use_container_width=True)
+        fig_imp.update_traces(textposition="outside")
+        st.plotly_chart(fig_imp, use_container_width=True)
